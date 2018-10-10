@@ -1,0 +1,55 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+.code-view *{
+  font-family: "Courier New", Courier, monospace;
+}
+
+.progress{
+	font-family: "Courier New", Courier, monospace;
+	font-size: 28,
+}
+.code-view {
+	width: 100%;
+}
+
+.code-view pre {
+  padding: 0;
+  margin: 0;
+}
+
+.code-view .count, .code-view .lineno{
+	text-align: right;
+	padding-left: 10px;
+	padding-right: 20px;
+	border-right: 1px dotted grey;
+	max-width: 30px !important;
+}
+
+.code-view .lineno {
+	color: grey;
+}
+
+.code-view tr.red {
+	background-color: #ff7979;
+}
+
+.code-view tr.green {
+	background-color: #a3ffa3;
+}
+
+.code-view .code {
+	text-align: left;
+	padding-left: 20px;
+}
+
+.code-view th {
+	border-bottom:  1px dotted grey;
+}
+
+.tab-container {
+	padding: 50px;
+}

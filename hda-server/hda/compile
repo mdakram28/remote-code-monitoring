@@ -1,0 +1,57 @@
+#!/bin/bash
+
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+python $SCRIPTPATH/pre-compile.py $@
+
+HOST_PRESENT=false
+
+for arg in $@; do
+	if [[ $arg = "-DHOST"* ]]; then
+		HOST_PRESENT=true
+	fi
+done
+
+EXTRA_ARGS=()
+
+if [ "$HOST_PRESENT" = false ]; then
+	echo "USING DEFAULT HOST 127.0.0.1"
+	EXTRA_ARGS=(-DHOST='"127.0.0.1"')
+fi
+
+
+### EXPERIMENTAL
+SOURCE_DIR=$(dirname "$1")
+mkdir -p $SOURCE_DIR/cov_files/temp
+# cd $SOURCE_DIR/cov_files/temp
+
+args=("$@[@]")
+echo "Original args: " "$@"
+echo "sources:" "$args"
+
+i=0
+for file in "$args"; do 
+	if [[ ${file:0:1} == "-" ]] ; then
+		break
+	fi
+	echo $file
+	FILENAME=$(basename $file)
+	args[$i]="../../$FILENAME"
+	((i++))
+done
+
+echo "Transformed args: " "$args"
+### EXPERIMENTAL
+
+echo "----------------------------------------"
+
+gcc \
+-fprofile-arcs \
+-ftest-coverage \
+-Wall \
+-I$SCRIPTPATH \
+$EXTRA_ARGS \
+$@ \
+-lpthread \
+-lm
+
+python $SCRIPTPATH/post-compile.py $@

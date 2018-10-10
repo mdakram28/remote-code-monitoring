@@ -1,0 +1,1 @@
+cmd_/media/mdakram28/Data/projects/hda/gcov/built-in.o :=  ld -m elf_x86_64   -r -o /media/mdakram28/Data/projects/hda/gcov/built-in.o /media/mdakram28/Data/projects/hda/gcov/base.o /media/mdakram28/Data/projects/hda/gcov/fs.o 

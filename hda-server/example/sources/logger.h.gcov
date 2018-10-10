@@ -1,0 +1,245 @@
+        -:    0:Source:/media/mdakram28/Data/projects/hda/hda-server/hda/logger.h
+        -:    0:Graph:/media/mdakram28/Data/projects/hda/hda-server/example/sources/cov_files/fib.c-1536858310552-23934/fib.gcno
+        -:    0:Data:/media/mdakram28/Data/projects/hda/hda-server/example/sources/cov_files/fib.c-1536858310552-23934/fib.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <signal.h>
+        -:    4:#include <sys/types.h>
+        -:    5:#include <unistd.h>
+        -:    6:#include <sys/time.h>
+        -:    7:#include <pthread.h>
+        -:    8:#include <netdb.h>
+        -:    9:#include <sys/socket.h>
+        -:   10:#include <netinet/in.h>
+        -:   11:#include <errno.h>
+        -:   12:#include <sys/uio.h>
+        -:   13:#include <string.h>
+        -:   14:#include <stdarg.h>
+        -:   15:#include <dirent.h>
+        -:   16:#include <sys/resource.h>
+        -:   17:#include <math.h>
+        -:   18:
+        -:   19:#define PACKET_SEND_DELAY 1000000
+        -:   20:#define GCDA_START_OFFSET 100
+        -:   21:#define PACKET_INFO_START 40
+        -:   22:
+        -:   23:void __gcov_flush(void);
+        -:   24:
+        -:   25:clock_t start, stop;
+        -:   26:int fd;
+        -:   27:struct addrinfo *res = 0;
+        -:   28:char buffer[10000];
+        -:   29:FILE *fptr;
+        -:   30:// struct rusage r_usage;
+        -:   31:char *gcda_filename;
+        -:   32:char gcda_full_filename[30];
+        -:   33:pthread_mutex_t packet_mutex;
+        -:   34:char *pid_str;
+        -:   35:
+        6:   36:void run_coverage()
+        -:   37:{
+        6:   38:	__gcov_flush();
+        6:   39:}
+        -:   40:
+        1:   41:long long current_time_millis()
+        -:   42:{
+        -:   43:	struct timespec spec;
+        1:   44:	clock_gettime(CLOCK_REALTIME, &spec);
+        1:   45:	return (spec.tv_nsec / 1.0e6) + ((long long)spec.tv_sec) * 1000;
+        -:   46:}
+        -:   47:
+        1:   48:void setup_udp()
+        -:   49:{
+        1:   50:	const char *hostname = HOST; /* localhost */
+        1:   51:	const char *portname = "5000";
+        -:   52:	struct addrinfo hints;
+        1:   53:	memset(&hints, 0, sizeof(hints));
+        1:   54:	hints.ai_family = AF_UNSPEC;
+        1:   55:	hints.ai_socktype = SOCK_DGRAM;
+        1:   56:	hints.ai_protocol = 0;
+        1:   57:	hints.ai_flags = AI_ADDRCONFIG;
+        1:   58:	int err = getaddrinfo(hostname, portname, &hints, &res);
+        1:   59:	if (err != 0)
+        -:   60:	{
+    #####:   61:		fprintf(stderr, "failed to resolve remote socket address (err=%d)", err);
+        -:   62:	}
+        -:   63:
+        1:   64:	fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        1:   65:	if (fd == -1)
+        -:   66:	{
+    #####:   67:		fprintf(stderr, "%s", strerror(errno));
+        -:   68:	}
+        1:   69:}
+        -:   70:
+    #####:   71:void delete_file(char *fileName)
+        -:   72:{
+        -:   73:	int status;
+    #####:   74:	status = remove(fileName);
+        -:   75:
+    #####:   76:	if (status != 0)
+        -:   77:	{
+    #####:   78:		printf("Unable to delete the file\n");
+    #####:   79:		perror("Error");
+        -:   80:	}
+    #####:   81:}
+        -:   82:
+        1:   83:void delete_gcda_files()
+        -:   84:{
+        -:   85:	struct dirent *de;
+        1:   86:	DIR *dir = opendir(pid_str);
+        1:   87:	if( dir == NULL) {
+        1:   88:		return;
+        -:   89:	}
+    #####:   90:	while ((de = readdir(dir)) != NULL)
+        -:   91:	{
+    #####:   92:		char *dot = strrchr(de->d_name, '.');
+    #####:   93:		if (dot && !strcmp(dot, ".gcda"))
+        -:   94:		{
+    #####:   95:			delete_file(de->d_name);
+        -:   96:		}
+        -:   97:	}
+        -:   98:	// printf("sadsadsa------------d");;
+    #####:   99:	closedir(dir);
+        -:  100:}
+        -:  101:
+        1:  102:void get_gcda_filename()
+        -:  103:{
+        -:  104:	struct dirent *de;
+        1:  105:	DIR *dir = opendir(pid_str);
+        1:  106:	if( dir == NULL) {
+    #####:  107:		printf("Null Directory");
+    #####:  108:		return;
+        -:  109:	}
+        4:  110:	while ((de = readdir(dir)) != NULL)
+        -:  111:	{
+        3:  112:		char *dot = strrchr(de->d_name, '.');
+        3:  113:		if (dot && !strcmp(dot, ".gcda"))
+        -:  114:		{
+        1:  115:			gcda_filename = de->d_name;
+        1:  116:			strcpy(gcda_full_filename, pid_str);
+        1:  117:			strcat(gcda_full_filename, "/");
+        1:  118:			strcat(gcda_full_filename, gcda_filename);
+        1:  119:			closedir(dir);
+        1:  120:			return;
+        -:  121:		}
+        -:  122:	}
+    #####:  123:	closedir(dir);
+        -:  124:}
+        -:  125:
+        5:  126:int parseLine(char* line){
+        -:  127:    // This assumes that a digit will be found and the line ends in " Kb".
+        5:  128:    int i = strlen(line);
+        5:  129:    const char* p = line;
+        5:  130:    while (*p <'0' || *p > '9') p++;
+        5:  131:    line[i-3] = '\0';
+        5:  132:    i = atoi(p);
+        5:  133:    return i;
+        -:  134:}
+        -:  135:
+        5:  136:int getMemoryUsage(){ //Note: this value is in KB!
+        5:  137:    FILE* file = fopen("/proc/self/status", "r");
+        5:  138:    int result = -1;
+        -:  139:    char line[128];
+        -:  140:
+       95:  141:    while (fgets(line, 128, file) != NULL){
+       90:  142:        if (strncmp(line, "VmSize:", 7) == 0){
+        5:  143:            result = parseLine(line);
+        5:  144:            break;
+        -:  145:        }
+        -:  146:    }
+        5:  147:    fclose(file);
+        5:  148:    return result;
+        -:  149:}
+        -:  150:
+        5:  151:void put_resource_stats_in_packet()
+        -:  152:{
+        -:  153:	// getrusage(RUSAGE_SELF, &r_usage);
+        5:  154:	sprintf(buffer + PACKET_INFO_START, "%d;", getMemoryUsage());
+        5:  155:}
+        -:  156:
+        1:  157:void put_process_info_in_packet()
+        -:  158:{
+        -:  159:	// sprintf(buffer, "%s%ll%d", gcda_filename, current_time_millis, getpid());
+        1:  160:	sprintf(buffer, "%s;%lld;%d;", gcda_filename, current_time_millis(), getpid());
+        1:  161:}
+        -:  162:
+        5:  163:void send_coverage_packet()
+        -:  164:{
+        5:  165:	pthread_mutex_lock(&packet_mutex);
+        -:  166:	int size;
+        5:  167:	run_coverage();
+        5:  168:	put_resource_stats_in_packet();
+        5:  169:	fptr = fopen(gcda_full_filename, "r");
+        5:  170:	if (fptr == NULL)
+        -:  171:	{
+    #####:  172:		printf("Cannot read data \n");
+    #####:  173:		exit(0);
+        -:  174:	}
+        5:  175:	size = fread(buffer + GCDA_START_OFFSET, sizeof(buffer) - GCDA_START_OFFSET, 1, fptr);
+        5:  176:	fseek(fptr, 0L, SEEK_END);
+        5:  177:	size = ftell(fptr);
+        5:  178:	if (sendto(fd, buffer, size + GCDA_START_OFFSET, 0, res->ai_addr, res->ai_addrlen) == -1)
+        -:  179:	{
+    #####:  180:		fprintf(stderr, "%s", strerror(errno));
+        -:  181:	}
+        5:  182:	fclose(fptr);
+        5:  183:	pthread_mutex_unlock(&packet_mutex);
+        5:  184:}
+        -:  185:
+        1:  186:void *probe_thread(void *vargp)
+        -:  187:{
+        1:  188:	delete_gcda_files();
+        1:  189:	run_coverage();
+        1:  190:	get_gcda_filename();
+        1:  191:	put_process_info_in_packet();
+        1:  192:	setup_udp();
+        -:  193:	while (1)
+        -:  194:	{
+        9:  195:		start = clock();
+        5:  196:		send_coverage_packet();
+        5:  197:		stop = clock();
+        5:  198:		usleep(PACKET_SEND_DELAY);
+        -:  199:	}
+        -:  200:}
+        -:  201:
+        1:  202:void sig_handler(int sig)
+        -:  203:{
+        1:  204:	exit(0);
+        -:  205:}
+        -:  206:
+    #####:  207:void exit_handler()
+        -:  208:{
+    #####:  209:	send_coverage_packet();
+    #####:  210:	delete_file(gcda_full_filename);
+    #####:  211:	delete_file(pid_str);
+    #####:  212:}
+        -:  213:
+        1:  214:void set_gcov_env() {
+        1:  215:	setenv("GCOV_PREFIX_STRIP", "10", 1);
+        1:  216:	int pid = getpid();
+        1:  217:	pid_str = (char *)malloc((int)((ceil(log10(pid))+1)*sizeof(char)));
+        1:  218:	sprintf(pid_str, "%d", pid);
+        1:  219:	printf("%s", pid_str);
+        1:  220:	setenv("GCOV_PREFIX", pid_str, 1);
+        1:  221:}
+        -:  222:
+        1:  223:void __attribute__((constructor)) setup()
+        -:  224:{
+        -:  225:	pthread_t thread_id;
+        1:  226:	setbuf(stdout, NULL);
+        -:  227:
+        1:  228:	set_gcov_env();
+        -:  229:
+        1:  230:	signal(SIGTERM, sig_handler);
+        1:  231:	signal(SIGABRT, sig_handler);
+        1:  232:	signal(SIGINT, sig_handler);
+        1:  233:	signal(SIGQUIT, sig_handler);
+        1:  234:	signal(SIGKILL, sig_handler);
+        1:  235:	signal(SIGSTOP, sig_handler);
+        1:  236:	atexit(exit_handler);
+        -:  237:
+        1:  238:	pthread_create(&thread_id, NULL, probe_thread, NULL);
+        -:  239:	// printf("Probe setup complete for %s\n", __FILE__);
+        1:  240:}

@@ -1,0 +1,33 @@
+        -:    0:Source:fib.c
+        -:    0:Graph:fib.gcno
+        -:    0:Data:fib.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include "logger.h"
+        -:    3:#include <time.h>
+        -:    4:
+   472545:    5:int f(int n)
+        -:    6:{
+   472545:    7:	usleep(1000);
+   472544:    8:	if (n == 0 || n == 1)
+   236283:    9:		return n;
+        -:   10:	else
+   236261:   11:		return (f(n - 1) + f(n - 2));
+        -:   12:}
+        -:   13:
+        1:   14:int main()
+        -:   15:{
+        1:   16:	int i = 1, c;
+        -:   17:	char *arr;
+        -:   18:	
+       25:   19:	for (c = 1; c <= 50; c++)
+        -:   20:	{
+       25:   21:		printf("%d\n", f(i));
+       24:   22:		arr = (char *)malloc(10000000);
+       24:   23:		sleep(1);
+       24:   24:		i++;
+        -:   25:	}
+        -:   26:
+    #####:   27:	return 0;
+        -:   28:}
